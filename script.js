@@ -2,39 +2,21 @@
 const map = new ol.Map({
     target: 'map',
     view: new ol.View({
-        center: ol.proj.fromLonLat([0, 0]),  // Start with a neutral zoomed-out view
+        center: ol.proj.fromLonLat([0, 0]),  // Set initial coordinates
         zoom: 2
-    }),
-    layers: []  // Start without a base layer
+    })
 });
 
-// Handle file upload
-document.getElementById('fileInput').addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const arrayBuffer = e.target.result;
-            loadGeoTIFF(arrayBuffer);
-        };
-        reader.readAsArrayBuffer(file);
-    }
-});
-
-// Load GeoTIFF onto map
-async function loadGeoTIFF(arrayBuffer) {
-    const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
+// Load and render the GeoTIFF
+async function loadGeoTIFF() {
+    const tiff = await GeoTIFF.fromUrl('path_to_your_large_geotiff.tif');  // Replace with your GeoTIFF URL
     const image = await tiff.getImage();
-    const bbox = image.getBoundingBox();  // Get the image bounds
+    const bbox = image.getBoundingBox();
 
-    const data = await image.readRasters();
-    const width = image.getWidth();
-    const height = image.getHeight();
-
-    // Convert GeoTIFF data to an OpenLayers source
+    // Use WebGL or OpenLayers to render the image
     const rasterSource = new ol.source.ImageStatic({
-        url: '',  // No URL since we're using data directly
-        imageExtent: ol.proj.transformExtent(bbox, 'EPSG:4326', 'EPSG:3857'),  // Transform to web mercator
+        url: '',
+        imageExtent: ol.proj.transformExtent(bbox, 'EPSG:4326', 'EPSG:3857'),
         projection: 'EPSG:3857',
         interpolate: false
     });
@@ -44,12 +26,15 @@ async function loadGeoTIFF(arrayBuffer) {
     });
 
     map.addLayer(rasterLayer);
-    map.getView().fit(rasterSource.getExtent());  // Fit map to the extent of the GeoTIFF
+    map.getView().fit(rasterSource.getExtent());
 }
 
-// Get user location and add a marker
+// Load the GeoTIFF when the page loads
+loadGeoTIFF();
+
+// Handle geolocation and add user marker
 if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((position) => {
+    navigator.geolocation.getCurrentPosition(function(position) {
         const { latitude, longitude } = position.coords;
         const userLocation = ol.proj.fromLonLat([longitude, latitude]);
 
@@ -66,7 +51,7 @@ if (navigator.geolocation) {
             style: new ol.style.Style({
                 image: new ol.style.Circle({
                     radius: 6,
-                    fill: new ol.style.Fill({ color: 'red' }),
+                    fill: new ol.style.Fill({ color: 'blue' }),
                     stroke: new ol.style.Stroke({ color: 'black', width: 2 })
                 })
             })
@@ -75,9 +60,7 @@ if (navigator.geolocation) {
         map.addLayer(vectorLayer);
         map.getView().setCenter(userLocation);
         map.getView().setZoom(10);
-    }, () => {
-        alert("Geolocation permission denied.");
+    }, function() {
+        alert('Geolocation not available');
     });
-} else {
-    alert("Geolocation is not supported by this browser.");
 }
