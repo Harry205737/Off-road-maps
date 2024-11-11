@@ -44,16 +44,21 @@
   document.getElementById('geotiffUpload').addEventListener('change', async function(event) {
     const file = event.target.files[0];
     if (file) {
-      const arrayBuffer = await file.arrayBuffer();
-      const georaster = await parseGeoraster(arrayBuffer);
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const georaster = await parseGeoraster(arrayBuffer);
 
-      const layer = new GeoRasterLayer({
-        georaster,
-        opacity: 0.6,  // Set opacity to allow the street map to be visible underneath
-      });
+        const layer = new GeoRasterLayer({
+          georaster,
+          opacity: 1.0,  // No transparency
+        });
 
-      layer.addTo(map);
-      map.fitBounds(layer.getBounds());
+        layer.addTo(map);
+        map.fitBounds(layer.getBounds());
+      } catch (error) {
+        console.error("Error loading GeoTIFF:", error);
+        alert("There was an error loading the GeoTIFF. Please ensure the file is valid.");
+      }
     }
   });
 
@@ -74,7 +79,6 @@
 
   // Request current location
   map.locate({ setView: true, maxZoom: 16 });
-
 </script>
 </body>
 </html>
