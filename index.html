@@ -56,34 +56,32 @@
       progressBar.value = 0; // Reset the progress bar
 
       try {
-        // Read file in chunks to simulate progress
-        const chunkSize = 1024 * 1024; // 1 MB chunks
-        let offset = 0;
-        const fileSize = file.size;
-
-        // Simulate file reading progress
-        while (offset < fileSize) {
-          // Simulate a delay for loading the file (remove in production)
-          await new Promise(resolve => setTimeout(resolve, 50));
-
-          offset += chunkSize;
-          progressBar.value = Math.min((offset / fileSize) * 100, 100); // Update progress
-        }
-
+        // Simulate progress bar completion for loading time visualization
+        progressBar.value = 50; // Set to 50% during parsing
+        
         // Read the entire file as array buffer and parse it
         const arrayBuffer = await file.arrayBuffer();
         const georaster = await parseGeoraster(arrayBuffer);
 
+        // Check if GeoTIFF parsed correctly
+        console.log("Parsed GeoTIFF:", georaster);
+        if (!georaster || !georaster.width || !georaster.height) {
+          throw new Error("Invalid GeoTIFF format or missing data");
+        }
+
+        // Create GeoTIFF layer
         const layer = new GeoRasterLayer({
           georaster,
           opacity: 1.0,  // No transparency
         });
 
+        // Add layer to map and adjust view to fit bounds
         layer.addTo(map);
         map.fitBounds(layer.getBounds());
+        progressBar.value = 100; // Set to 100% when complete
       } catch (error) {
         console.error("Error loading GeoTIFF:", error);
-        alert("There was an error loading the GeoTIFF. Please ensure the file is valid.");
+        alert("There was an error loading the GeoTIFF. Please ensure the file is valid, uncompressed, and in EPSG:4326.");
       } finally {
         progressBar.style.display = 'none'; // Hide the progress bar
       }
