@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GeoTIFF Overlay with Current Location</title>
+  <title>GeoTIFF Overlay with Upload Progress and Location</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
     #map {
@@ -18,6 +18,11 @@
       padding: 5px;
       border-radius: 5px;
     }
+    #progressBar {
+      width: 100%;
+      margin-top: 10px;
+      display: none; /* Hidden by default */
+    }
   </style>
 </head>
 <body>
@@ -25,6 +30,7 @@
 <div id="fileInput">
   <label for="geotiffUpload">Upload GeoTIFF:</label>
   <input type="file" id="geotiffUpload" accept=".tiff, .tif" />
+  <progress id="progressBar" max="100" value="0"></progress>
 </div>
 <div id="map"></div>
 
@@ -40,11 +46,31 @@
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
+  const progressBar = document.getElementById('progressBar');
+
   // Function to handle file input and display the GeoTIFF overlay
   document.getElementById('geotiffUpload').addEventListener('change', async function(event) {
     const file = event.target.files[0];
     if (file) {
+      progressBar.style.display = 'block'; // Show the progress bar
+      progressBar.value = 0; // Reset the progress bar
+
       try {
+        // Read file in chunks to simulate progress
+        const chunkSize = 1024 * 1024; // 1 MB chunks
+        let offset = 0;
+        const fileSize = file.size;
+
+        // Simulate file reading progress
+        while (offset < fileSize) {
+          // Simulate a delay for loading the file (remove in production)
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          offset += chunkSize;
+          progressBar.value = Math.min((offset / fileSize) * 100, 100); // Update progress
+        }
+
+        // Read the entire file as array buffer and parse it
         const arrayBuffer = await file.arrayBuffer();
         const georaster = await parseGeoraster(arrayBuffer);
 
@@ -58,6 +84,8 @@
       } catch (error) {
         console.error("Error loading GeoTIFF:", error);
         alert("There was an error loading the GeoTIFF. Please ensure the file is valid.");
+      } finally {
+        progressBar.style.display = 'none'; // Hide the progress bar
       }
     }
   });
