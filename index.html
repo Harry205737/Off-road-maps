@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoTIFF Viewer</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <title>GeoTIFF Viewer with OpenLayers</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/6.5.0/ol.min.css" />
     <style>
         #map { height: 100vh; }
         .upload-btn { position: absolute; top: 10px; left: 10px; z-index: 1000; }
@@ -14,9 +14,8 @@
     <input type="file" id="fileInput" class="upload-btn" accept=".tif" />
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/geotiff/dist/geotiff.browser.min.js"></script>
-    <script src="https://unpkg.com/leaflet-geotiff/dist/leaflet-geotiff.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/6.5.0/ol.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/geotiff@1.0.0-beta.6/dist/geotiff.browser.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
