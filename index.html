@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline GeoTIFF Viewer</title>
+    <title>Offline PDF Map Viewer</title>
     <link rel="stylesheet" href="leaflet.css"> <!-- Local Leaflet CSS -->
     <style>
         #map { height: 100vh; }
@@ -13,11 +13,11 @@
 <body>
 
 <div id="map"></div>
-<input type="file" id="file-input" class="file-input" accept=".tif, .tiff" />
+<input type="file" id="file-input" class="file-input" accept=".pdf" />
 
 <script src="leaflet.js"></script> <!-- Local Leaflet JS -->
-<script src="geotiff.js"></script> <!-- Local geotiff.js -->
-<script src="proj4.js"></script> <!-- Local Proj4.js, if needed for projections -->
+<script src="pdf.js"></script> <!-- Local PDF.js -->
+<script src="pdf.worker.js"></script> <!-- PDF.js worker file -->
 
 <script>
     // Initialize Leaflet map
@@ -38,45 +38,43 @@
         });
     }
 
-    // Handle file input and load GeoTIFF
+    // Handle file input and load PDF
     document.getElementById('file-input').addEventListener('change', async (event) => {
         const file = event.target.files[0];
-        if (file && file.size <= 50 * 1024 * 1024) { // Check file size
+        if (file) {
             const arrayBuffer = await file.arrayBuffer();
-            const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
-            const image = await tiff.getImage();
-            const rasterData = await image.readRasters({ window: [0, 0, image.getWidth(), image.getHeight()] });
-            
-            // Get bounding box and project it
-            const bbox = image.getBoundingBox();
-            const corners = [
-                [bbox[1], bbox[0]], // SW
-                [bbox[3], bbox[2]]  // NE
-            ];
 
-            // Create a Leaflet image overlay
-            const canvas = document.createElement('canvas');
-            canvas.width = image.getWidth();
-            canvas.height = image.getHeight();
-            const ctx = canvas.getContext('2d');
+            // Load PDF using PDF.js
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            loadingTask.promise.then(async (pdf) => {
+                // Get the first page of the PDF
+                const page = await pdf.getPage(1);
+                
+                // Set up a canvas to render PDF
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const ctx = canvas.getContext('2d');
 
-            // Render GeoTIFF data on canvas
-            const imageData = ctx.createImageData(canvas.width, canvas.height);
-            for (let i = 0; i < rasterData[0].length; i++) {
-                const value = rasterData[0][i];
-                imageData.data[i * 4] = value;      // Red
-                imageData.data[i * 4 + 1] = value;  // Green
-                imageData.data[i * 4 + 2] = value;  // Blue
-                imageData.data[i * 4 + 3] = 255;    // Alpha
-            }
-            ctx.putImageData(imageData, 0, 0);
+                // Render the page into the canvas
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                await page.render(renderContext).promise;
 
-            // Add the canvas as a Leaflet overlay
-            const overlay = L.imageOverlay.canvas(corners, { opacity: 0.5 });
-            overlay.getElement().getContext('2d').drawImage(canvas, 0, 0);
-            overlay.addTo(map);
+                // Convert canvas to an image overlay on the map
+                const imgUrl = canvas.toDataURL("image/png");
+
+                // Define a bounding box for the overlay (customize coordinates based on your PDF map)
+                const bounds = [[/* SW lat */, /* SW lng */], [/* NE lat */, /* NE lng */]];
+
+                // Add the image overlay to the Leaflet map
+                L.imageOverlay(imgUrl, bounds, { opacity: 0.5 }).addTo(map);
+            });
         } else {
-            alert("Please select a GeoTIFF file under 50MB.");
+            alert("Please select a PDF file.");
         }
     });
 </script>
