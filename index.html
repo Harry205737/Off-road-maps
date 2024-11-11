@@ -1,110 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GeoTIFF Overlay with Upload Progress and Location</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-  <style>
-    #map {
-      height: 100vh;
-    }
-    #fileInput {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 5px;
-      border-radius: 5px;
-    }
-    #progressBar {
-      width: 100%;
-      margin-top: 10px;
-      display: none; /* Hidden by default */
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoTIFF Viewer</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; }
+        .upload-btn { position: absolute; top: 10px; left: 10px; z-index: 1000; }
+    </style>
 </head>
 <body>
+    <input type="file" id="fileInput" class="upload-btn" accept=".tif" />
+    <div id="map"></div>
 
-<div id="fileInput">
-  <label for="geotiffUpload">Upload GeoTIFF:</label>
-  <input type="file" id="geotiffUpload" accept=".tiff, .tif" />
-  <progress id="progressBar" max="100" value="0"></progress>
-</div>
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script src="https://unpkg.com/georaster-layer-for-leaflet"></script>
-<script src="https://unpkg.com/geotiff"></script>
-<script>
-  // Initialize the map
-  const map = L.map('map').setView([0, 0], 2);
-
-  // Add a basic street tile layer as a base
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
-
-  const progressBar = document.getElementById('progressBar');
-
-  // Function to handle file input and display the GeoTIFF overlay
-  document.getElementById('geotiffUpload').addEventListener('change', async function(event) {
-    const file = event.target.files[0];
-    if (file) {
-      progressBar.style.display = 'block'; // Show the progress bar
-      progressBar.value = 0; // Reset the progress bar
-
-      try {
-        // Simulate progress bar completion for loading time visualization
-        progressBar.value = 50; // Set to 50% during parsing
-        
-        // Read the entire file as array buffer and parse it
-        const arrayBuffer = await file.arrayBuffer();
-        const georaster = await parseGeoraster(arrayBuffer);
-
-        // Check if GeoTIFF parsed correctly
-        console.log("Parsed GeoTIFF:", georaster);
-        if (!georaster || !georaster.width || !georaster.height) {
-          throw new Error("Invalid GeoTIFF format or missing data");
-        }
-
-        // Create GeoTIFF layer
-        const layer = new GeoRasterLayer({
-          georaster,
-          opacity: 1.0,  // No transparency
-        });
-
-        // Add layer to map and adjust view to fit bounds
-        layer.addTo(map);
-        map.fitBounds(layer.getBounds());
-        progressBar.value = 100; // Set to 100% when complete
-      } catch (error) {
-        console.error("Error loading GeoTIFF:", error);
-        alert("There was an error loading the GeoTIFF. Please ensure the file is valid, uncompressed, and in EPSG:4326.");
-      } finally {
-        progressBar.style.display = 'none'; // Hide the progress bar
-      }
-    }
-  });
-
-  // Geolocation to show user position
-  function onLocationFound(e) {
-    const radius = e.accuracy / 2;
-    L.marker(e.latlng).addTo(map)
-      .bindPopup("You are within " + radius + " meters from this point").openPopup();
-    L.circle(e.latlng, radius).addTo(map);
-  }
-
-  function onLocationError(e) {
-    alert(e.message);
-  }
-
-  map.on('locationfound', onLocationFound);
-  map.on('locationerror', onLocationError);
-
-  // Request current location
-  map.locate({ setView: true, maxZoom: 16 });
-</script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/geotiff/dist/geotiff.browser.min.js"></script>
+    <script src="https://unpkg.com/leaflet-geotiff/dist/leaflet-geotiff.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
